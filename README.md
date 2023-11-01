@@ -1,3 +1,7 @@
+# Nuvoled Websocket
+
+Websocket for controlling the nuvoled java software remotely using flaks.
+
 Development:
 `flask --app main --debug run`  
 Production:
