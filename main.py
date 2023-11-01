@@ -39,18 +39,18 @@ def startNuvoLed():
 
     child_pid = proc.pid
     print(child_pid)
-
-    (output, error) = proc.communicate()
-    s = error + output
-    return str(s), 200
+    return "started", 200
 
     # return "started", 200
 
 
-@app.get('/status')  # ------- seperate loop --------------
+@app.get('/status')  # ------- seperate loop -------
 def getStatus():
     if proc is None:
-        return "offline", 200
+        return "offline", 404
+    else:
+        return "online", 200
+
     (output, error) = proc.communicate()
     s = error + output
     return str(s), 200
@@ -58,8 +58,10 @@ def getStatus():
 
 @app.post('/stop')
 def stopNuvoLed():
+    global proc
     print("terminate")
     kills(child_pid)
     (output, error) = proc.communicate()
     s = error + output
+    proc = None
     return str(s), 200
