@@ -7,16 +7,17 @@ import atexit
 from threading import Thread
 
 import psutil
-from flask import Flask, request
+from flask import Blueprint, request
 
-app = Flask(__name__)
-print(os.getpid())
+global child_pid, proc, running, q
 
-global child_pid, proc, running
+bp = Blueprint("main", __name__, url_prefix="/main")
 
+global proc, running
 proc = None
 running = False
 q = queue.Queue()
+print(os.getpid())
 
 
 def kills(pid):
@@ -27,7 +28,7 @@ def kills(pid):
     parent.kill()
 
 
-@app.get('/version')
+@bp.get('/version')
 def getJavaVersion():
     print("version")
     a = subprocess.run(['java', '--version'], capture_output=True, shell=True)
@@ -35,13 +36,14 @@ def getJavaVersion():
     return str(a.stdout), 200
 
 
-@app.post('/startparamter')
+@bp.route('/startparamter', methods=["POST"])
 def startNuvoLedWithParameter():
     global proc, child_pid, running
     if running:
         return "failed to launch | another instance is running", 404
     running = True
     request_data = request.get_json()
+    print(str(request_data))
     proc = subprocess.Popen(["java", "-jar", "nuvoled-1.0-SNAPSHOT-jar-with-dependencies.jar", "-py",
                              str(request_data["py"]), "-px",
                              str(request_data["px"]), "-br", str(request_data["brightness"]), "-r",
@@ -53,7 +55,7 @@ def startNuvoLedWithParameter():
     return "started", 200
 
 
-@app.post('/start')
+@bp.post('/start')
 def startNuvoLed():
     global proc, child_pid, running
     running = True
@@ -78,7 +80,7 @@ def createStatusLoop():
     thread.start()
 
 
-@app.get('/status')
+@bp.get('/status')
 def getAllStatus():
     if (q.empty()):
         return "nothing in que", 200
@@ -86,7 +88,7 @@ def getAllStatus():
     return status, 200
 
 
-@app.get('/statusonoff')
+@bp.get('/statusonoff')
 def getStatus():
     if running:
         return "online", 404
@@ -94,7 +96,7 @@ def getStatus():
         return "offline", 200
 
 
-@app.post('/stop')
+@bp.post('/stop')
 def stopNuvoLed():
     global proc, running
     running = False

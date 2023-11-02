@@ -4,8 +4,13 @@ Websocket for controlling the nuvoled java software remotely using flaks.
 
 Development:
 `flask --app main --debug run`  
+`flask --app flaskr run --debug`
 Production:
 https://flask.palletsprojects.com/en/2.3.x/tutorial/deploy/
+
+`pip install -e .`  
+`python -m build --wheel`  
+`waitress-serve --call 'flaskr:create_app'`  
 
 start parameter:  
 **{  
@@ -15,3 +20,4 @@ start parameter:
     "rotation": 90,  
     "screennumber": 0  
 }**
+
