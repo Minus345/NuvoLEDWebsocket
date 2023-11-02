@@ -1,9 +1,6 @@
 import os
 import queue
-import signal
 import subprocess
-import time
-import atexit
 from threading import Thread
 
 import psutil
