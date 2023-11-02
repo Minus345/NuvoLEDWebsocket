@@ -1,6 +1,7 @@
 import os
 import queue
 import subprocess
+import sys
 from threading import Thread
 
 import psutil
@@ -79,10 +80,22 @@ def createStatusLoop():
 
 @bp.get('/status')
 def getAllStatus():
+    status = "Status:"
     if (q.empty()):
         return "nothing in que", 200
-    status = q.get(timeout=1)
+    while not q.empty():
+        status = status + str(q.get(timeout=1))
     return status, 200
+
+
+@bp.get('/ip')
+def getip():
+    if sys.platform == "win32":
+        output = subprocess.run("ipconfig", capture_output= True)
+        return str(output.stdout), 200
+    else:
+        output = subprocess.run("ifconfig")
+        return str(output.stdout), 200
 
 
 @bp.get('/statusonoff')
