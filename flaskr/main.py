@@ -7,7 +7,7 @@ from threading import Thread
 import psutil
 from flask import Blueprint, request
 
-global child_pid, proc, running, q
+global child_pid, proc, running, q, chromeId
 
 bp = Blueprint("main", __name__, url_prefix="/main")
 
@@ -91,11 +91,28 @@ def getAllStatus():
 @bp.get('/ip')
 def getip():
     if sys.platform == "win32":
-        output = subprocess.run("ipconfig", capture_output= True)
+        output = subprocess.run("ipconfig", capture_output=True, shell=True)
         return str(output.stdout), 200
     else:
-        output = subprocess.run("ifconfig")
-        return str(output.stdout), 200
+        output = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        line = output.stdout.read().decode()
+        return line, 200
+
+
+@bp.post('/startchromium')
+def startChromium():
+    global chromeId
+    chrome = subprocess.Popen(["chromium", "--kiosk", "http://localhost/display/"], stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+    chromeId = chrome.pid
+    return "started", 200
+
+
+@bp.post('/stopchromium')
+def stopChromium():
+    kills(chromeId)
+    return "stopped", 200
 
 
 @bp.get('/statusonoff')
