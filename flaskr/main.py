@@ -124,11 +124,30 @@ def getipstate():
 @bp.post('/startchromium')
 def startChromium():
     global chromeId, runningChrome
-    chrome = subprocess.Popen(["chromium", "--kiosk", "http://localhost/display/"], stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-    chromeId = chrome.pid
-    runningChrome = True
-    return "started", 200
+    logging.info("Starting Chrome")
+
+    try: 
+        request_data = request.get_json()
+        logging.info(str(request_data))
+        starturl = request_data["url"]
+    except:
+        starturl= "http://localhost/display/"
+
+    logging.info("Starting " + starturl)
+
+    try: 
+        chrome = subprocess.Popen(["chromium", "--kiosk", "--autoplay-policy=no-user-gesture-required", "--aggressive-cache-discard", starturl], stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        chromeId = chrome.pid
+        runningChrome = True
+        response = {"started": True}
+    except FileNotFoundError as fnf_error:
+        runningChrome = False
+        response = {"started": False, "error": "chromium -> FileNotFound", "url": starturl}
+    except:
+        runningChrome = False
+        response = {"started": False, "error": "Unknonw error", "url": starturl}
+    return response, 200
 
 
 @bp.post('/stopchromium')

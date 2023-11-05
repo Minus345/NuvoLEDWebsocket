@@ -4,3 +4,4 @@ venv
 .idea/*
 instance
 instance/*
+flaskr.log
