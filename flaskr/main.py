@@ -12,7 +12,13 @@ from flaskr.helper import findNuvoIp
 
 global child_pid, proc, running, q, chromeId
 
-logging.basicConfig(filename='flaskr.log', encoding='utf-8', level=logging.DEBUG)
+#logging.basicConfig(filename='flaskr.log', encoding='utf-8', level=logging.DEBUG)
+
+# < 3.9
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('Img_To_Local_Python.log', 'w', 'utf-8')
+root_logger.addHandler(handler)
 
 bp = Blueprint("main", __name__, url_prefix="/main")
 proc = None
