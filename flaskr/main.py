@@ -10,7 +10,7 @@ from flask import Blueprint, request
 
 from flaskr.helper import findNuvoIp
 
-global child_pid, proc, running, q, chromeId
+global child_pid, proc, running, q, chromeId, runningChrome
 
 #logging.basicConfig(filename='flaskr.log', encoding='utf-8', level=logging.DEBUG)
 
@@ -23,6 +23,7 @@ root_logger.addHandler(handler)
 bp = Blueprint("main", __name__, url_prefix="/main")
 proc = None
 running = False
+runningChrome = False
 q = queue.Queue()
 print(os.getpid())
 
@@ -122,18 +123,30 @@ def getipstate():
 
 @bp.post('/startchromium')
 def startChromium():
-    global chromeId
+    global chromeId, runningChrome
     chrome = subprocess.Popen(["chromium", "--kiosk", "http://localhost/display/"], stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE)
     chromeId = chrome.pid
+    runningChrome = True
     return "started", 200
 
 
 @bp.post('/stopchromium')
 def stopChromium():
+    global runningChrome
     kills(chromeId)
+    runningChrome = False
     return "stopped", 200
 
+@bp.get('/statuschrome')
+def getStatusChrome():
+    global runningChrome
+    if runningChrome:
+        stateJava = { "state": True }
+        return stateJava, 200
+    else:
+        stateJava = { "state": False }
+        return stateJava, 200
 
 @bp.get('/statusonoff')
 def getStatus():
