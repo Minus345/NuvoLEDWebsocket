@@ -140,7 +140,8 @@ def stopChromium():
 
 @bp.get('/statuschrome')
 def getStatusChrome():
-    global runningChrome
+    logging.info("status Chrome")
+    logging.info(runningChrome)
     if runningChrome:
         stateJava = { "state": True }
         return stateJava, 200
