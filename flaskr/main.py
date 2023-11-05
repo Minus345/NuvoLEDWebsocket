@@ -1,3 +1,4 @@
+import logging
 import os
 import queue
 import subprocess
@@ -7,16 +8,17 @@ from threading import Thread
 import psutil
 from flask import Blueprint, request
 
+from flaskr.helper import findNuvoIp
+
 global child_pid, proc, running, q, chromeId
 
-bp = Blueprint("main", __name__, url_prefix="/main")
+logging.basicConfig(filename='flaskr.log', encoding='utf-8', level=logging.DEBUG)
 
-global proc, running
+bp = Blueprint("main", __name__, url_prefix="/main")
 proc = None
 running = False
 q = queue.Queue()
 print(os.getpid())
-
 
 def kills(pid):
     '''Kills all process'''
@@ -24,7 +26,6 @@ def kills(pid):
     for child in parent.children(recursive=True):
         child.kill()
     parent.kill()
-
 
 @bp.get('/version')
 def getJavaVersion():
@@ -98,6 +99,19 @@ def getip():
                                   stderr=subprocess.PIPE)
         line = output.stdout.read().decode()
         return line, 200
+
+
+@bp.get('/ipstate')
+def getipstate():
+    # find ip 169.254
+    if sys.platform == "win32":
+        output = subprocess.run("ipconfig", capture_output=True, shell=True)
+        return findNuvoIp(str(output.stdout)), 200
+    else:
+        output = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        line = output.stdout.read().decode()
+        return findNuvoIp(line), 200
 
 
 @bp.post('/startchromium')
