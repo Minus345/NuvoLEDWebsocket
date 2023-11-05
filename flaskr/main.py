@@ -49,11 +49,22 @@ def startNuvoLedWithParameter():
         return "failed to launch | another instance is running", 404
     running = True
     request_data = request.get_json()
+
+    try:
+        sleepms = request_data["s"]
+    except:
+        sleepms = 0
+
+
     print(str(request_data))
     proc = subprocess.Popen(["java", "-jar", "nuvoled-1.0-SNAPSHOT-jar-with-dependencies.jar", "-py",
-                             str(request_data["py"]), "-px",
-                             str(request_data["px"]), "-br", str(request_data["brightness"]), "-r",
-                             str(request_data["rotation"]), "-sn", str(request_data["screennumber"])],
+                             str(request_data["py"]), 
+                             "-px", str(request_data["px"]), 
+                             "-br", str(request_data["brightness"]), 
+                             "-r", str(request_data["rotation"]), 
+                             "-sn", str(request_data["screennumber"]),
+                             "-s", str(sleepms)
+                             ],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
     child_pid = proc.pid

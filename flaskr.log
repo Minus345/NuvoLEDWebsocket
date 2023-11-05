@@ -1,2 +1,6 @@
  * Debugger is active!
  * Debugger PIN: 105-184-221
+127.0.0.1 - - [05/Nov/2023 16:44:11] "GET /main/status HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2023 16:44:17] "POST /main/startparamter HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2023 16:44:22] "GET /main/status HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2023 16:46:34] "POST /main/stop HTTP/1.1" 200 -
