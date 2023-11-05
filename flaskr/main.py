@@ -1,3 +1,4 @@
+import logging
 import os
 import queue
 import subprocess
@@ -7,16 +8,24 @@ from threading import Thread
 import psutil
 from flask import Blueprint, request
 
-global child_pid, proc, running, q, chromeId
+from flaskr.helper import findNuvoIp
+
+global child_pid, proc, running, q, chromeId, runningChrome
+
+#logging.basicConfig(filename='flaskr.log', encoding='utf-8', level=logging.DEBUG)
+
+# < 3.9
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler('flaskr.log', 'w', 'utf-8')
+root_logger.addHandler(handler)
 
 bp = Blueprint("main", __name__, url_prefix="/main")
-
-global proc, running
 proc = None
 running = False
+runningChrome = False
 q = queue.Queue()
 print(os.getpid())
-
 
 def kills(pid):
     '''Kills all process'''
@@ -24,7 +33,6 @@ def kills(pid):
     for child in parent.children(recursive=True):
         child.kill()
     parent.kill()
-
 
 @bp.get('/version')
 def getJavaVersion():
@@ -41,11 +49,22 @@ def startNuvoLedWithParameter():
         return "failed to launch | another instance is running", 404
     running = True
     request_data = request.get_json()
+
+    try:
+        sleepms = request_data["s"]
+    except:
+        sleepms = 0
+
+
     print(str(request_data))
     proc = subprocess.Popen(["java", "-jar", "nuvoled-1.0-SNAPSHOT-jar-with-dependencies.jar", "-py",
-                             str(request_data["py"]), "-px",
-                             str(request_data["px"]), "-br", str(request_data["brightness"]), "-r",
-                             str(request_data["rotation"]), "-sn", str(request_data["screennumber"])],
+                             str(request_data["py"]), 
+                             "-px", str(request_data["px"]), 
+                             "-br", str(request_data["brightness"]), 
+                             "-r", str(request_data["rotation"]), 
+                             "-sn", str(request_data["screennumber"]),
+                             "-s", str(sleepms)
+                             ],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
     child_pid = proc.pid
@@ -100,27 +119,74 @@ def getip():
         return line, 200
 
 
+@bp.get('/ipstate')
+def getipstate():
+    # find ip 169.254
+    if sys.platform == "win32":
+        output = subprocess.run("ipconfig", capture_output=True, shell=True)
+        return findNuvoIp(str(output.stdout)), 200
+    else:
+        output = subprocess.Popen(["ifconfig"], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        line = output.stdout.read().decode()
+        return findNuvoIp(line), 200
+
+
 @bp.post('/startchromium')
 def startChromium():
-    global chromeId
-    chrome = subprocess.Popen(["chromium", "--kiosk", "http://localhost/display/"], stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
-    chromeId = chrome.pid
-    return "started", 200
+    global chromeId, runningChrome
+    logging.info("Starting Chrome")
+
+    try: 
+        request_data = request.get_json()
+        logging.info(str(request_data))
+        starturl = request_data["url"]
+    except:
+        starturl= "http://localhost/display/"
+
+    logging.info("Starting " + starturl)
+
+    try: 
+        chrome = subprocess.Popen(["chromium", "--kiosk", "--autoplay-policy=no-user-gesture-required", "--aggressive-cache-discard", starturl], stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        chromeId = chrome.pid
+        runningChrome = True
+        response = {"started": True}
+    except FileNotFoundError as fnf_error:
+        runningChrome = False
+        response = {"started": False, "error": "chromium -> FileNotFound", "url": starturl}
+    except:
+        runningChrome = False
+        response = {"started": False, "error": "Unknonw error", "url": starturl}
+    return response, 200
 
 
 @bp.post('/stopchromium')
 def stopChromium():
+    global runningChrome
     kills(chromeId)
+    runningChrome = False
     return "stopped", 200
 
+@bp.get('/statuschrome')
+def getStatusChrome():
+    logging.info("status Chrome")
+    logging.info(runningChrome)
+    if runningChrome:
+        stateJava = { "state": True }
+        return stateJava, 200
+    else:
+        stateJava = { "state": False }
+        return stateJava, 200
 
 @bp.get('/statusonoff')
 def getStatus():
     if running:
-        return "online", 404
+        stateJava = { "state": True }
+        return stateJava, 200
     else:
-        return "offline", 200
+        stateJava = { "state": False }
+        return stateJava, 200
 
 
 @bp.post('/stop')
