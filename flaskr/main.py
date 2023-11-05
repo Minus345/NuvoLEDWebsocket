@@ -17,7 +17,7 @@ global child_pid, proc, running, q, chromeId
 # < 3.9
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler('Img_To_Local_Python.log', 'w', 'utf-8')
+handler = logging.FileHandler('flaskr.log', 'w', 'utf-8')
 root_logger.addHandler(handler)
 
 bp = Blueprint("main", __name__, url_prefix="/main")
@@ -138,9 +138,11 @@ def stopChromium():
 @bp.get('/statusonoff')
 def getStatus():
     if running:
-        return "online", 404
+        stateJava = { "state": True }
+        return stateJava, 200
     else:
-        return "offline", 200
+        stateJava = { "state": False }
+        return stateJava, 200
 
 
 @bp.post('/stop')
